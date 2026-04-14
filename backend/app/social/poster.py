@@ -14,9 +14,13 @@ def _caption_parts(clip: ClipMeta, override_caption: str | None, override_tags: 
     return caption, tags
 
 
-def post_to_platforms(job_id: str, clip_id: str, platforms: list[str],
-                      caption_override: str | None = None,
-                      hashtags_override: list[str] | None = None) -> dict:
+def post_to_platforms(
+    job_id: str,
+    clip_id: str,
+    platforms: list[str],
+    caption_override: str | None = None,
+    hashtags_override: list[str] | None = None,
+) -> dict:
     job = jobs.get(job_id)
     if not job:
         raise RuntimeError("job not found")
@@ -31,6 +35,7 @@ def post_to_platforms(job_id: str, clip_id: str, platforms: list[str],
         try:
             if platform == "youtube":
                 from . import youtube
+
                 vid = youtube.upload_short(
                     file_path=clip.file_path,
                     title=clip.title,
@@ -40,6 +45,7 @@ def post_to_platforms(job_id: str, clip_id: str, platforms: list[str],
                 results["youtube"] = f"ok:{vid}"
             elif platform == "tiktok":
                 from . import tiktok
+
                 pub_id = tiktok.upload_video(
                     file_path=clip.file_path,
                     title=caption or clip.title,
@@ -48,6 +54,7 @@ def post_to_platforms(job_id: str, clip_id: str, platforms: list[str],
                 results["tiktok"] = f"ok:{pub_id}"
             elif platform == "instagram":
                 from . import instagram
+
                 # IG needs a public URL to the file.
                 rel = Path(clip.file_path).resolve().relative_to(settings.data_path)
                 public_url = f"{settings.public_base_url.rstrip('/')}/files/{rel.as_posix()}"

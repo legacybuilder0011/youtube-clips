@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 from ..config import settings
 from ..models import ViralMoment

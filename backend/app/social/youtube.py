@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """YouTube Shorts upload via Data API v3.
 
 Requires an OAuth desktop-app client secret at
@@ -7,7 +5,8 @@ Requires an OAuth desktop-app client secret at
 consent flow and persist credentials at ``settings.youtube_token_file``.
 """
 
-import os
+from __future__ import annotations
+
 from pathlib import Path
 
 from ..config import settings

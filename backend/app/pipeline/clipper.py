@@ -47,7 +47,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font},{size},{primary},&H000000FF,{outline},&H64000000,-1,0,0,0,100,100,0,0,1,4,2,2,60,60,{int(height*0.18)},1
+Style: Default,{font},{size},{primary},&H000000FF,{outline},&H64000000,-1,0,0,0,100,100,0,0,1,4,2,2,60,60,{int(height * 0.18)},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -60,19 +60,20 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         we = float(w["end"]) - clip_start
         if we <= 0 or ws >= (clip_end - clip_start):
             continue
-        local_words.append({
-            "start": max(0.0, ws),
-            "end": min(clip_end - clip_start, we),
-            "word": w["word"].strip(),
-        })
+        local_words.append(
+            {
+                "start": max(0.0, ws),
+                "end": min(clip_end - clip_start, we),
+                "word": w["word"].strip(),
+            }
+        )
 
     events = []
     # group into chunks of N words
     for i in range(0, len(local_words), w_per_line):
-        chunk = local_words[i:i + w_per_line]
+        chunk = local_words[i : i + w_per_line]
         if not chunk:
             continue
-        chunk_start = chunk[0]["start"]
         chunk_end = chunk[-1]["end"]
         # Render one event per highlighted-word state within the chunk.
         for j, active in enumerate(chunk):
@@ -141,14 +142,28 @@ def cut_and_caption(
     )
 
     cmd = [
-        "ffmpeg", "-y",
-        "-ss", f"{start:.3f}",
-        "-i", source_video,
-        "-t", f"{duration:.3f}",
-        "-filter_complex", vf,
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-        "-c:a", "aac", "-b:a", "160k",
-        "-movflags", "+faststart",
+        "ffmpeg",
+        "-y",
+        "-ss",
+        f"{start:.3f}",
+        "-i",
+        source_video,
+        "-t",
+        f"{duration:.3f}",
+        "-filter_complex",
+        vf,
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "20",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "160k",
+        "-movflags",
+        "+faststart",
         str(out_path),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
@@ -160,8 +175,17 @@ def cut_and_caption(
 def make_thumbnail(clip_path: Path, out_path: Path, at: float = 1.0) -> Path:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
-        "ffmpeg", "-y", "-ss", f"{at:.2f}", "-i", str(clip_path),
-        "-frames:v", "1", "-q:v", "3", str(out_path),
+        "ffmpeg",
+        "-y",
+        "-ss",
+        f"{at:.2f}",
+        "-i",
+        str(clip_path),
+        "-frames:v",
+        "1",
+        "-q:v",
+        "3",
+        str(out_path),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import traceback
 import uuid
 from pathlib import Path
@@ -14,8 +13,13 @@ from .downloader import download_video
 from .transcriber import transcribe
 
 
-def run_job(job_id: str, clips_count: int | None = None, aspect: str | None = None,
-            min_s: int | None = None, max_s: int | None = None) -> None:
+def run_job(
+    job_id: str,
+    clips_count: int | None = None,
+    aspect: str | None = None,
+    min_s: int | None = None,
+    max_s: int | None = None,
+) -> None:
     job = jobs.get(job_id)
     if not job:
         return
@@ -27,8 +31,10 @@ def run_job(job_id: str, clips_count: int | None = None, aspect: str | None = No
     try:
         # ---- 1. Download ----
         jobs.update_status(job_id, "downloading", 5, "starting download")
+
         def prog(pct, msg):
             jobs.update_status(job_id, "downloading", max(5, min(30, 5 + pct // 4)), msg)
+
         info = download_video(job.url, settings.downloads_path, progress=prog)
         job = jobs.get(job_id)
         job.source_file = info["file"]
@@ -63,7 +69,8 @@ def run_job(job_id: str, clips_count: int | None = None, aspect: str | None = No
         total = len(moments)
         for i, m in enumerate(moments, start=1):
             jobs.update_status(
-                job_id, "clipping",
+                job_id,
+                "clipping",
                 60 + int(i * 35 / total),
                 f"cutting clip {i}/{total}: {m.title[:40]}",
             )

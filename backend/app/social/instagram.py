@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Instagram Reels upload via Graph API.
 
 Reference: https://developers.facebook.com/docs/instagram-api/guides/content-publishing
@@ -11,6 +9,8 @@ video URL, poll until FINISHED, then publish. Requires:
 - Clip reachable via ``settings.public_base_url`` (expose your server publicly,
   e.g. with ngrok or a real domain).
 """
+
+from __future__ import annotations
 
 import time
 

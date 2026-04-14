@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from .config import settings
 from .models import ClipMeta, Job, JobStatus
@@ -29,7 +27,7 @@ def save(job: Job) -> None:
         _job_file(job.id).write_text(job.model_dump_json(indent=2))
 
 
-def get(job_id: str) -> Optional[Job]:
+def get(job_id: str) -> Job | None:
     p = _job_file(job_id)
     if not p.exists():
         return None
@@ -38,7 +36,9 @@ def get(job_id: str) -> Optional[Job]:
 
 def list_jobs() -> list[Job]:
     out: list[Job] = []
-    for f in sorted(settings.jobs_path.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+    for f in sorted(
+        settings.jobs_path.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
+    ):
         try:
             out.append(Job.model_validate_json(f.read_text()))
         except Exception:
@@ -66,7 +66,7 @@ def add_clip(job_id: str, clip: ClipMeta) -> None:
     save(job)
 
 
-def update_clip(job_id: str, clip_id: str, **changes) -> Optional[ClipMeta]:
+def update_clip(job_id: str, clip_id: str, **changes) -> ClipMeta | None:
     job = get(job_id)
     if not job:
         return None

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +27,7 @@ class ClipMeta(BaseModel):
     reason: str = ""
     virality_score: int = 0
     file_path: str
-    thumbnail_path: Optional[str] = None
+    thumbnail_path: str | None = None
     posted: dict[str, str] = Field(default_factory=dict)  # platform -> status/id
 
 
@@ -49,16 +49,16 @@ class Job(BaseModel):
 
 class CreateJobRequest(BaseModel):
     url: str
-    clips_count: Optional[int] = None
-    min_seconds: Optional[int] = None
-    max_seconds: Optional[int] = None
-    aspect: Optional[str] = None
+    clips_count: int | None = None
+    min_seconds: int | None = None
+    max_seconds: int | None = None
+    aspect: str | None = None
 
 
 class PostRequest(BaseModel):
     platforms: list[Literal["youtube", "tiktok", "instagram"]]
-    caption_override: Optional[str] = None
-    hashtags_override: Optional[list[str]] = None
+    caption_override: str | None = None
+    hashtags_override: list[str] | None = None
 
 
 class ViralMoment(BaseModel):

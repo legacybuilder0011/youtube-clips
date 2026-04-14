@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from yt_dlp import YoutubeDL
 
 
-def download_video(url: str, out_dir: Path, progress: Callable[[int, str], None] | None = None) -> dict:
+def download_video(
+    url: str, out_dir: Path, progress: Callable[[int, str], None] | None = None
+) -> dict:
     """Download a YouTube video, return {file, title, duration}."""
     out_dir.mkdir(parents=True, exist_ok=True)
 

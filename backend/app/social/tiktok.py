@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """TikTok Content Posting API — direct upload flow.
 
 Reference: https://developers.tiktok.com/doc/content-posting-api-reference-direct-post
@@ -9,8 +7,9 @@ Requires an approved TikTok developer app with ``video.upload`` and
 with the Content Posting API sandbox if you want real public posts.
 """
 
+from __future__ import annotations
+
 import math
-import os
 from pathlib import Path
 
 import httpx
