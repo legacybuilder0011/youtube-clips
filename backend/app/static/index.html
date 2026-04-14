@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Viral Clip Generator</title>
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<header>
+  <h1>Viral Clip Generator</h1>
+  <p class="sub">Paste a YouTube URL, get AI-picked short clips with burned-in captions, post to socials.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>New job</h2>
+    <form id="newJob" class="row">
+      <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." required />
+      <input id="count" type="number" min="1" max="15" placeholder="# clips" />
+      <select id="aspect">
+        <option value="">aspect</option>
+        <option value="9:16">9:16 (Shorts/TikTok/Reels)</option>
+        <option value="1:1">1:1</option>
+        <option value="16:9">16:9</option>
+      </select>
+      <button type="submit">Generate</button>
+    </form>
+    <p class="hint">Processing runs in the background. Long videos + local Whisper = slow on CPU.</p>
+  </section>
+
+  <section>
+    <h2>Jobs</h2>
+    <div id="jobs"></div>
+  </section>
+</main>
+
+<template id="jobTpl">
+  <div class="card job">
+    <div class="job-head">
+      <div>
+        <div class="job-title"></div>
+        <div class="job-url"></div>
+      </div>
+      <div class="job-status"><span class="pill"></span></div>
+    </div>
+    <div class="bar"><div class="fill"></div></div>
+    <div class="msg"></div>
+    <div class="clips"></div>
+  </div>
+</template>
+
+<template id="clipTpl">
+  <div class="clip">
+    <video controls preload="metadata"></video>
+    <div class="clip-body">
+      <div class="clip-title"></div>
+      <div class="clip-meta"></div>
+      <textarea class="caption" rows="3"></textarea>
+      <input class="tags" placeholder="comma separated hashtags" />
+      <div class="clip-actions">
+        <label><input type="checkbox" data-p="youtube" /> YouTube</label>
+        <label><input type="checkbox" data-p="tiktok" /> TikTok</label>
+        <label><input type="checkbox" data-p="instagram" /> Instagram</label>
+        <button class="post">Post</button>
+      </div>
+      <div class="posted"></div>
+    </div>
+  </div>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
