@@ -52,10 +52,14 @@ def download_video(
             progress(100, "download complete")
 
     ydl_opts: dict = {
-        # Cascading format fallbacks so we don't fail on videos that only
-        # ship muxed streams or don't have a <=1080p rendition.
+        # Keep the selector forgiving: "best" guarantees a result when the
+        # stricter selectors filter every format out (which happens on old
+        # yt-dlp versions that can't decrypt YouTube's newer signature cipher).
         "format": (
-            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/best"
+            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/"
+            "bv*[height<=1080]+ba/"
+            "b[height<=1080]/"
+            "bv*+ba/b/best"
         ),
         "merge_output_format": "mp4",
         "outtmpl": str(out_dir / "%(id)s.%(ext)s"),
