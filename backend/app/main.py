@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -13,6 +15,19 @@ from .pipeline.orchestrator import run_job
 from .social.poster import post_to_platforms
 
 app = FastAPI(title="YouTube Viral Clip Generator")
+
+# CORS — allow the Lovable (or other) frontend to call this API. Set
+# ALLOWED_ORIGINS in the environment to a comma-separated list, e.g.
+# "https://my-app.lovable.app,http://localhost:5173". Defaults to "*" for dev.
+_origins_raw = os.environ.get("ALLOWED_ORIGINS", "*")
+_origins = [o.strip() for o in _origins_raw.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ---- Static files for the SPA and for clip downloads ----
