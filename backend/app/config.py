@@ -35,6 +35,17 @@ class Settings(BaseSettings):
     # Storage
     data_dir: str = "./data"
 
+    # yt-dlp / YouTube download
+    # Path to a Netscape-format cookies.txt file, or the raw file contents.
+    # Railway servers get bot-checked by YouTube; exporting cookies from a
+    # signed-in browser and pasting them in YT_DLP_COOKIES works around it.
+    yt_dlp_cookies_file: str = ""
+    yt_dlp_cookies: str = ""
+    yt_dlp_user_agent: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    )
+
     # YouTube
     youtube_client_secrets_file: str = "./secrets/youtube_client_secret.json"
     youtube_token_file: str = "./secrets/youtube_token.json"

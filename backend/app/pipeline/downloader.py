@@ -1,9 +1,37 @@
 from __future__ import annotations
 
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
 from yt_dlp import YoutubeDL
+
+from ..config import settings
+
+
+def _resolve_cookies_file() -> str | None:
+    """Return a path to a Netscape cookies.txt file, or None.
+
+    Supports two env-var flavors:
+      - YT_DLP_COOKIES_FILE: an absolute path already on disk
+      - YT_DLP_COOKIES: raw file contents pasted into the env var; we write it
+        to a tempfile and return that path.
+    """
+    path = (settings.yt_dlp_cookies_file or "").strip()
+    if path and Path(path).is_file():
+        return path
+
+    raw = settings.yt_dlp_cookies or ""
+    if raw.strip():
+        tmp = tempfile.NamedTemporaryFile(
+            prefix="ytdlp-cookies-", suffix=".txt", delete=False, mode="w", encoding="utf-8"
+        )
+        tmp.write(raw)
+        tmp.flush()
+        tmp.close()
+        return tmp.name
+
+    return None
 
 
 def download_video(
@@ -23,7 +51,7 @@ def download_video(
         elif d.get("status") == "finished":
             progress(100, "download complete")
 
-    ydl_opts = {
+    ydl_opts: dict = {
         "format": "bv*[height<=1080]+ba/b[height<=1080]",
         "merge_output_format": "mp4",
         "outtmpl": str(out_dir / "%(id)s.%(ext)s"),
@@ -31,7 +59,20 @@ def download_video(
         "no_warnings": True,
         "progress_hooks": [hook],
         "noplaylist": True,
+        # Anti-bot: send a real browser UA and try the android/web players,
+        # which are less aggressive about the "confirm you're not a bot" gate.
+        "http_headers": {"User-Agent": settings.yt_dlp_user_agent},
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"],
+            }
+        },
+        "retries": 3,
     }
+
+    cookies_path = _resolve_cookies_file()
+    if cookies_path:
+        ydl_opts["cookiefile"] = cookies_path
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
