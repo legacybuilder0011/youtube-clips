@@ -55,10 +55,7 @@ def download_video(
         # Cascading format fallbacks so we don't fail on videos that only
         # ship muxed streams or don't have a <=1080p rendition.
         "format": (
-            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/"
-            "bv*[height<=1080]+ba/"
-            "b[height<=1080]/"
-            "best"
+            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/best"
         ),
         "merge_output_format": "mp4",
         "outtmpl": str(out_dir / "%(id)s.%(ext)s"),
@@ -77,9 +74,7 @@ def download_video(
         # No cookies available: fall back to the android player client,
         # which is less aggressive about the "confirm you're not a bot" gate
         # at the cost of a narrower format list.
-        ydl_opts["extractor_args"] = {
-            "youtube": {"player_client": ["android", "web"]}
-        }
+        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "web"]}}
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
