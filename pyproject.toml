@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["data", "secrets", ".venv"]
+
+[tool.ruff.lint]
+# Keep the initial CI signal useful but not noisy. We enable:
+# - E/W: pycodestyle errors & warnings
+# - F:   pyflakes (undefined names, unused imports, etc.)
+# - I:   import sorting
+# - UP:  pyupgrade (modern syntax)
+# - B:   flake8-bugbear (likely bugs)
+select = ["E", "W", "F", "I", "UP", "B"]
+ignore = [
+  "E501",  # line too long (line-length already set generously)
+  "B008",  # function call in default arg — FastAPI pattern
+]
+
+[tool.ruff.format]
+quote-style = "double"
