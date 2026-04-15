@@ -53,6 +53,32 @@ def health() -> dict:
     }
 
 
+@app.get("/api/debug/ytdlp")
+def debug_ytdlp() -> dict:
+    """Report whether YouTube cookies + yt-dlp are wired up correctly."""
+    import yt_dlp
+
+    from .pipeline.downloader import _resolve_cookies_file
+
+    cookies_path = _resolve_cookies_file()
+    cookies_info: dict = {"found": cookies_path is not None}
+    if cookies_path:
+        try:
+            size = Path(cookies_path).stat().st_size
+            cookies_info["size_bytes"] = size
+            with open(cookies_path, encoding="utf-8", errors="replace") as f:
+                first_line = f.readline().strip()
+            cookies_info["header"] = first_line
+        except Exception as e:
+            cookies_info["error"] = str(e)
+    return {
+        "yt_dlp_version": getattr(yt_dlp.version, "__version__", "unknown"),
+        "cookies": cookies_info,
+        "env_has_YT_DLP_COOKIES": bool(os.environ.get("YT_DLP_COOKIES")),
+        "env_has_YT_DLP_COOKIES_FILE": bool(os.environ.get("YT_DLP_COOKIES_FILE")),
+    }
+
+
 @app.post("/api/jobs", response_model=Job)
 def create_job(req: CreateJobRequest, bg: BackgroundTasks) -> Job:
     if not req.url.strip():

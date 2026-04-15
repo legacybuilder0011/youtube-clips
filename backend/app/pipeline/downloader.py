@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import os
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
@@ -7,6 +9,8 @@ from pathlib import Path
 from yt_dlp import YoutubeDL
 
 from ..config import settings
+
+log = logging.getLogger(__name__)
 
 
 def _resolve_cookies_file() -> str | None:
@@ -16,21 +20,31 @@ def _resolve_cookies_file() -> str | None:
       - YT_DLP_COOKIES_FILE: an absolute path already on disk
       - YT_DLP_COOKIES: raw file contents pasted into the env var; we write it
         to a tempfile and return that path.
+
+    Reads both the Pydantic settings value *and* os.environ directly, so the
+    env var works even if Pydantic's env-loading is disabled or fails.
     """
-    path = (settings.yt_dlp_cookies_file or "").strip()
+    path = (settings.yt_dlp_cookies_file or os.environ.get("YT_DLP_COOKIES_FILE", "")).strip()
     if path and Path(path).is_file():
+        log.info("yt-dlp: using cookies file at %s", path)
         return path
 
-    raw = settings.yt_dlp_cookies or ""
-    if raw.strip():
+    raw = settings.yt_dlp_cookies or os.environ.get("YT_DLP_COOKIES", "")
+    if raw and raw.strip():
+        # Normalize line endings — some Railway/Render dashboards mangle \r\n.
+        raw_norm = raw.replace("\r\n", "\n").replace("\r", "\n")
+        if not raw_norm.startswith("# Netscape"):
+            raw_norm = "# Netscape HTTP Cookie File\n" + raw_norm
         tmp = tempfile.NamedTemporaryFile(
             prefix="ytdlp-cookies-", suffix=".txt", delete=False, mode="w", encoding="utf-8"
         )
-        tmp.write(raw)
+        tmp.write(raw_norm)
         tmp.flush()
         tmp.close()
+        log.info("yt-dlp: wrote cookies (%d bytes) from env to %s", len(raw_norm), tmp.name)
         return tmp.name
 
+    log.warning("yt-dlp: no cookies found (YT_DLP_COOKIES / YT_DLP_COOKIES_FILE not set)")
     return None
 
 
