@@ -52,27 +52,34 @@ def download_video(
             progress(100, "download complete")
 
     ydl_opts: dict = {
-        "format": "bv*[height<=1080]+ba/b[height<=1080]",
+        # Cascading format fallbacks so we don't fail on videos that only
+        # ship muxed streams or don't have a <=1080p rendition.
+        "format": (
+            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/"
+            "bv*[height<=1080]+ba/"
+            "b[height<=1080]/"
+            "best"
+        ),
         "merge_output_format": "mp4",
         "outtmpl": str(out_dir / "%(id)s.%(ext)s"),
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [hook],
         "noplaylist": True,
-        # Anti-bot: send a real browser UA and try the android/web players,
-        # which are less aggressive about the "confirm you're not a bot" gate.
         "http_headers": {"User-Agent": settings.yt_dlp_user_agent},
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "web"],
-            }
-        },
         "retries": 3,
     }
 
     cookies_path = _resolve_cookies_file()
     if cookies_path:
         ydl_opts["cookiefile"] = cookies_path
+    else:
+        # No cookies available: fall back to the android player client,
+        # which is less aggressive about the "confirm you're not a bot" gate
+        # at the cost of a narrower format list.
+        ydl_opts["extractor_args"] = {
+            "youtube": {"player_client": ["android", "web"]}
+        }
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
