@@ -15,8 +15,11 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Install Python deps first so Docker layer caching works on code-only changes.
+# Force a yt-dlp upgrade on every build so YouTube extractor fixes land
+# without a manual rebuild — yt-dlp ships roughly weekly.
 COPY requirements.txt ./
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt \
+ && pip install --upgrade --no-cache-dir yt-dlp
 
 # Copy the application.
 COPY backend ./backend

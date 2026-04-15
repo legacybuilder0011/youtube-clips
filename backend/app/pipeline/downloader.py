@@ -83,19 +83,46 @@ def download_video(
         "noplaylist": True,
         "http_headers": {"User-Agent": settings.yt_dlp_user_agent},
         "retries": 3,
+        # Always try multiple player clients — YouTube returns different
+        # format manifests per client and some (web) fail to decrypt on
+        # data-center IPs. tv_embedded and ios are the most reliable
+        # fallbacks in 2025.
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["tv_embedded", "ios", "web", "android"],
+            }
+        },
     }
 
     cookies_path = _resolve_cookies_file()
     if cookies_path:
         ydl_opts["cookiefile"] = cookies_path
-    else:
-        # No cookies available: fall back to the android player client,
-        # which is less aggressive about the "confirm you're not a bot" gate
-        # at the cost of a narrower format list.
-        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "web"]}}
 
-    with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+    except Exception as e:
+        # On format-selection failure, re-probe the URL without downloading
+        # so we can log what formats YouTube actually returned. This makes
+        # the real problem visible in Railway logs instead of a generic
+        # "Requested format is not available".
+        if "Requested format is not available" in str(e):
+            try:
+                probe_opts = {**ydl_opts, "format": None, "quiet": True}
+                probe_opts.pop("progress_hooks", None)
+                with YoutubeDL(probe_opts) as probe:
+                    probe_info = probe.extract_info(url, download=False)
+                fmts = probe_info.get("formats", []) if probe_info else []
+                summary = [
+                    f"{f.get('format_id')}:{f.get('ext')}:"
+                    f"v={f.get('vcodec')}:a={f.get('acodec')}:"
+                    f"h={f.get('height')}"
+                    for f in fmts[:25]
+                ]
+                log.error("yt-dlp formats available (%d): %s", len(fmts), " | ".join(summary))
+            except Exception as probe_err:
+                log.error("yt-dlp probe also failed: %s", probe_err)
+        raise
 
     # Resolve final filename (after merge). yt-dlp gives us the right extension via info after merge.
     video_id = info.get("id")
