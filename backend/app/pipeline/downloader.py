@@ -66,16 +66,11 @@ def download_video(
             progress(100, "download complete")
 
     ydl_opts: dict = {
-        # Keep the selector forgiving: "best" guarantees a result when the
-        # stricter selectors filter every format out (which happens on old
-        # yt-dlp versions that can't decrypt YouTube's newer signature cipher).
-        "format": (
-            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/"
-            "bv*[height<=1080]+ba/"
-            "b[height<=1080]/"
-            "bv*+ba/b/best"
-        ),
-        "merge_output_format": "mp4",
+        # Use yt-dlp's default selector ("bv*+ba/b") via a sort hint rather
+        # than a hard filter. A strict codec/ext filter can match zero formats
+        # on certain YouTube responses (especially tv_embedded), leading to
+        # "Requested format is not available" even when usable formats exist.
+        "format_sort": ["res:1080", "ext:mp4:m4a", "codec:h264", "size"],
         "outtmpl": str(out_dir / "%(id)s.%(ext)s"),
         "quiet": True,
         "no_warnings": True,
@@ -102,24 +97,39 @@ def download_video(
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
     except Exception as e:
-        # On format-selection failure, re-probe the URL without downloading
-        # so we can log what formats YouTube actually returned. This makes
-        # the real problem visible in Railway logs instead of a generic
-        # "Requested format is not available".
+        # On format-selection failure, re-probe the URL with process=False so
+        # yt-dlp skips format selection and we can see what formats YouTube
+        # actually returned. This turns the opaque "Requested format is not
+        # available" into an actionable log line.
         if "Requested format is not available" in str(e):
             try:
-                probe_opts = {**ydl_opts, "format": None, "quiet": True}
+                probe_opts = {
+                    **ydl_opts,
+                    "quiet": True,
+                    "skip_download": True,
+                }
                 probe_opts.pop("progress_hooks", None)
+                probe_opts.pop("format", None)
+                probe_opts.pop("merge_output_format", None)
                 with YoutubeDL(probe_opts) as probe:
-                    probe_info = probe.extract_info(url, download=False)
+                    probe_info = probe.extract_info(url, download=False, process=False)
                 fmts = probe_info.get("formats", []) if probe_info else []
-                summary = [
-                    f"{f.get('format_id')}:{f.get('ext')}:"
-                    f"v={f.get('vcodec')}:a={f.get('acodec')}:"
-                    f"h={f.get('height')}"
-                    for f in fmts[:25]
-                ]
-                log.error("yt-dlp formats available (%d): %s", len(fmts), " | ".join(summary))
+                if fmts:
+                    summary = [
+                        f"{f.get('format_id')}:{f.get('ext')}:"
+                        f"v={f.get('vcodec')}:a={f.get('acodec')}:"
+                        f"h={f.get('height')}"
+                        for f in fmts[:30]
+                    ]
+                    log.error("yt-dlp formats (%d): %s", len(fmts), " | ".join(summary))
+                else:
+                    # No formats at all — likely an extraction-level issue.
+                    keys = list((probe_info or {}).keys())
+                    log.error(
+                        "yt-dlp probe returned 0 formats. info keys=%s availability=%s",
+                        keys,
+                        (probe_info or {}).get("availability"),
+                    )
             except Exception as probe_err:
                 log.error("yt-dlp probe also failed: %s", probe_err)
         raise
